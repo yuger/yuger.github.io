@@ -1,0 +1,35 @@
+<html>
+<head>
+	
+	<title>获取Android Linux内核版本</title>
+	<meta name="keywords" content="My Blog, Spider Bitch!" />
+
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    
+    <!--<link rel="stylesheet" href="/css/main.css">-->
+	<link href="/css/main.css?v=2" rel="stylesheet" type="text/css" />
+    <!--<link rel="stylesheet" href="/css/style.css">-->
+    
+
+    <link rel="alternate" type="application/atom+xml" href="/atom.xml" title="Atom feed">
+
+    
+	<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2"/>
+    
+
+</head>
+
+<body>
+
+<p>一般来说不需要关注的信息，但是frameWork层依然提供了API.</p>
+<p>法一:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div></pre></td><td class="code"><pre><div class="line">/**</div><div class="line"> * 获取Android Linux内核版本信息</div><div class="line"> */</div><div class="line">public void getLinuxKernalInfo() &#123;</div><div class="line">    Process process = null;</div><div class="line">    String mLinuxKernal = null;</div><div class="line">    try &#123;</div><div class="line">        process = Runtime.getRuntime().exec(&quot;cat /proc/version&quot;);</div><div class="line">    &#125; catch (IOException e) &#123;</div><div class="line">        e.printStackTrace();</div><div class="line">    &#125;</div><div class="line">    // get the output line  </div><div class="line">    InputStream outs = process.getInputStream();</div><div class="line">    InputStreamReader isrout = new InputStreamReader(outs);</div><div class="line">    BufferedReader brout = new BufferedReader(isrout, 8 * 1024);</div><div class="line">    String result = &quot;&quot;;</div><div class="line">    String line;</div><div class="line">    // get the whole standard output string  </div><div class="line">    try &#123;</div><div class="line">        while ((line = brout.readLine()) != null) &#123;</div><div class="line">            result += line;</div><div class="line">        &#125;</div><div class="line">    &#125; catch (IOException e) &#123;</div><div class="line">        e.printStackTrace();</div><div class="line">    &#125;</div><div class="line">    if (!&quot;&quot;.equals(result)) &#123;</div><div class="line">        String Keyword = &quot;version &quot;;</div><div class="line">        int index = result.indexOf(Keyword);</div><div class="line">        Log.v(TAG, &quot;----&quot; + result);</div><div class="line">        line = result.substring(index + Keyword.length());</div><div class="line">        index = line.indexOf(&quot; &quot;);</div><div class="line">        mLinuxKernal = line.substring(0, index);</div><div class="line">        Log.d(TAG, &quot;----Linux Kernal is : &quot; + mLinuxKernal);</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>法二：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line"><span class="function"><span class="keyword">public</span> String <span class="title">getLinuxKernalInfoEx</span><span class="params">()</span> </span>&#123;</div><div class="line">    String result = <span class="string">""</span>;</div><div class="line">    String line;</div><div class="line">    String[] cmd = <span class="keyword">new</span> String[]&#123;<span class="string">"/system/bin/cat"</span>, <span class="string">"/proc/version"</span>&#125;;</div><div class="line">    String workdirectory = <span class="string">"/system/bin/"</span>;</div><div class="line">    <span class="keyword">try</span> &#123;</div><div class="line">        ProcessBuilder bulider = <span class="keyword">new</span> ProcessBuilder(cmd);</div><div class="line">        bulider.directory(<span class="keyword">new</span> File(workdirectory));</div><div class="line">        bulider.redirectErrorStream(<span class="keyword">true</span>);</div><div class="line">        Process process = bulider.start();</div><div class="line">        InputStream in = process.getInputStream();</div><div class="line">        InputStreamReader isrout = <span class="keyword">new</span> InputStreamReader(in);</div><div class="line">        BufferedReader brout = <span class="keyword">new</span> BufferedReader(isrout, <span class="number">8</span> * <span class="number">1024</span>);</div><div class="line">        <span class="keyword">while</span> ((line = brout.readLine()) != <span class="keyword">null</span>) &#123;</div><div class="line">            result += line;</div><div class="line">            <span class="comment">// result += "\n";  </span></div><div class="line">        &#125;</div><div class="line">        in.close();</div><div class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</div><div class="line">        e.printStackTrace();</div><div class="line">    &#125;</div><div class="line">    Log.i(TAG, <span class="string">"----Linux Kernal is :"</span> + result);</div><div class="line">    <span class="keyword">return</span> result;</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+
+
+
+
+
+</body>
+</html>

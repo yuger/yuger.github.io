@@ -1,0 +1,34 @@
+<html>
+<head>
+	
+	<title>Android各种目录的获取</title>
+	<meta name="keywords" content="My Blog, Spider Bitch!" />
+
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    
+    <!--<link rel="stylesheet" href="/css/main.css">-->
+	<link href="/css/main.css?v=2" rel="stylesheet" type="text/css" />
+    <!--<link rel="stylesheet" href="/css/style.css">-->
+    
+
+    <link rel="alternate" type="application/atom+xml" href="/atom.xml" title="Atom feed">
+
+    
+	<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2"/>
+    
+
+</head>
+
+<body>
+
+<p>Android开发经常要获取各种文件目录，比如内置外置，还有缓存、数据等目录，都可以从代码中通过调用API获取，以下是一些记录。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div></pre></td><td class="code"><pre><div class="line">Environment.getDataDirectory().getPath()        /data        用户数据目录</div><div class="line"></div><div class="line">Environment.getDownloadCacheDirectory().getPath()        /cache        下载缓存内容目录</div><div class="line"></div><div class="line">Environment.getExternalStorageDirectory().getPath()        /mnt/sdcard        主要的外部存储目录</div><div class="line">    (getExternalStorageState()获取当前状态)</div><div class="line"></div><div class="line">Environment.getRootDirectory().getPath()        /system</div><div class="line"></div><div class="line">getCacheDir().getPath()        /data/data/package_name/cache</div><div class="line"></div><div class="line">Context.getExternalFilesDir()            /mnt/sdcard/Android/data/package_name/files 应用私有文件存放位置，卸载后删除该目录，能被其他程序访问</div><div class="line"></div><div class="line">getExternalCacheDir().getPath()        /mnt/sdcard/Android/data/package_name/cache //清除数据后package_name删除</div><div class="line"></div><div class="line">getFilesDir().getPath()        /data/data/package_name/files //内部存储空间</div><div class="line"></div><div class="line">getObbDir().getPath()        /mnt/sdcard/Android/obb/package_name</div><div class="line"></div><div class="line">getPackageCodePath()        /data/app/package_name-1.apk</div><div class="line"></div><div class="line">getPackageResourcePath()        /data/app/package_name-1.apk</div><div class="line"></div><div class="line">Environment.getExternalStorageDirectory().getAbsolutePath()            /mnt/sdcard</div><div class="line"></div><div class="line">Environment.getExternalStoragePublicDirectory(String)    共享文件位置</div><div class="line"></div><div class="line">Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState()) ：可读写</div><div class="line">Environment.MEDIA_MOUNTED_READ_ONLY.equals(Environment.getExternalStorageState())：只读</div><div class="line"></div><div class="line"></div><div class="line">SharedPreference：/data/data/package_name/Shared_Pref/</div><div class="line">File：/data/data/package_name/files/    Context.openFileOutput(String fileName, int mode)    Context.openFileInput(String fileName)</div><div class="line">Database：/data/data/package_name/databases/</div><div class="line"></div><div class="line">1，Context.getFilesDir                      /data/user/0/应用包名/files</div><div class="line">2,Context.getCacheDir                     /data/user/0/应用包名/cache</div><div class="line">3，Context.getObbDir                     /storage/emulated/0/Android/obb/应用包名 </div><div class="line">4，Context.CodeCacheDir               /data/user/0/应用包名/code_cache</div><div class="line">5，Context.getExternalFilesDir        /storage/emulated/0/Android/data/应用包名/files/Download (以下载目录为准)</div><div class="line">6，Context.getExternalCacheDir        /storage/emulated/0/Android/data/应用包名/cache</div><div class="line">7，Context.getDatabasePath          /data/user/0/应用包名/databases/参数名</div><div class="line">8，Context.getDir                      /data/user/0/应用包名/app_参数名</div><div class="line">9，Context.getPackageCodePath         /data/app/应用包名-1/base.apk</div><div class="line">10，Context.getRootDirectory         /system</div><div class="line">11,Environment.getExternalStorageDirectory         /storage/emulated/0</div><div class="line">12，Environment.getExternalStoragePublicDirectory        /storage/emulated/0/Download（以下载目录为例）</div><div class="line">13，Environment.getDownloadCacheDirectory         /cache</div><div class="line">14,Context.getFileStreamPath          /data/data/应用包名/files/download（示例download）</div></pre></td></tr></table></figure></p>
+<p>基本上够用了。</p>
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,60 @@
+<html>
+<head>
+	
+	<title>CentOS7安装Ngrok实现内网穿透</title>
+	<meta name="keywords" content="My Blog, Spider Bitch!" />
+
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    
+    <!--<link rel="stylesheet" href="/css/main.css">-->
+	<link href="/css/main.css?v=2" rel="stylesheet" type="text/css" />
+    <!--<link rel="stylesheet" href="/css/style.css">-->
+    
+
+    <link rel="alternate" type="application/atom+xml" href="/atom.xml" title="Atom feed">
+
+    
+	<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2"/>
+    
+
+</head>
+
+<body>
+
+<p>Ngrok是个什么东东可能很多人并不清楚，我们需要设想这样一个场景：你的电脑上有一个文件或者一个网站，需要其他人能够访问到，这个需求可以实现吗？ 很明显如果访客和你不是在同一个局域网里面，正常情况下是访问不到的，为什么呢？因为你没有公网IP地址，访客根本找不到你，不用谈访问你电脑上的数据了。那么为什么你没有公网IP地址呢？因为公网IP地址的数量是有限的，大概40亿个，看起来很多吧，其实不然，因为还有相当一部分是用不上的，比如局域网IP地址就不能再作为公网IP地址之用了，另外还有些是浪费了的，这就是IP地址设计的问题了。现在的联网设备已经超过40亿这个数字了，意味着大部分普通设备是没有分配公网IP的，它们分配的是私网IP，也就是局域网IP,比如<code>192.168.1.100</code>，每个公网 IP之下都可以衍生多个局域网IP,我们的电脑就是借助公网IP访问互联网的。那么为什么没有公网IP就不能被其他人访问到呢？这就是网关的问题了，别人最多能找到你对应的公网IP地址，无奈不知道私有IP啊，而且即使知道也是不可以直接访问的啊。</p>
+<p>介绍了这么多，终于轮到本文的主角Ngrok出场了，还是类似于VPN,访客访问的其实是我们服务器的IP地址，这个IP地址必须是公网的，我们在服务器安装Ngrok，让Ngrok与我们的电脑与服务器构建一条私有连接，当访客需要访问我们的电脑的时候，Ta访问的应该是我们的服务器，由服务器中转访问请求到我们的电脑，然后电脑将数据返回给服务器，最后服务器将数据发送给访客，所有又是相当于走了一次代理，但是原理与之前的应用还是不一样的。</p>
+<p>以下便是具体实现，服务端和我们的电脑都需要相关的配置。</p>
+<p>一：安装git </p>
+<p>1、安装git所用到依赖包<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">yum -y install zlib-devel openssl-devel perl hg cpio expat-devel gettext-devel curl curl-devel perl-ExtUtils-MakeMaker hg wget gcc gcc-c++</div></pre></td></tr></table></figure></p>
+<p>2、下载git<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">wget https://www.kernel.org/pub/software/scm/git/git-2.6.0.tar.gz</div></pre></td></tr></table></figure></p>
+<p>3、解压git<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">tar zxvf git-2.6.0.tar.gz</div></pre></td></tr></table></figure></p>
+<p>4、编译git<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">cd git-2.6.0</div><div class="line">./configure --prefix=/usr/local/git</div><div class="line">make</div><div class="line">make install</div></pre></td></tr></table></figure></p>
+<p>5、创建git的软连接<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">ln -s /usr/local/git/bin/* /usr/bin/</div></pre></td></tr></table></figure></p>
+<p>二：安装go环境</p>
+<p>因为我是64位的centos，所以下载64位的包，还有一定要下载1.4版本的go环境，好像1.4以后的版本就不是用C语言编写的，会编译错误。</p>
+<p>1、下载go环境<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">wget http://www.golangtc.com/static/go/1.4.2/go1.4.2.linux-amd64.tar.gz</div></pre></td></tr></table></figure></p>
+<p>2、解压<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">tar zxvf go1.4.2.linux-amd64.tar.gz</div><div class="line">mv go /usr/local</div></pre></td></tr></table></figure></p>
+<p>3、go的命令需要软连接到/usr/bin<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">ln -s /usr/local/go/bin/* /usr/bin</div></pre></td></tr></table></figure></p>
+<p>4、编译ngrok-<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">cd /usr/local/</div><div class="line">git clone https://github.com/inconshreveable/ngrok.git</div><div class="line">export GOPATH=/usr/local/ngrok/</div><div class="line">export NGROK_DOMAIN=&quot;你的域名&quot;</div><div class="line">cd ngrok</div></pre></td></tr></table></figure></p>
+<hr>
+<p>三：生成域名证书并拷贝到指定位置<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">openssl genrsa -out rootCA.key 2048</div><div class="line">openssl req -x509 -new -nodes -key rootCA.key -subj &quot;/CN=$NGROK_DOMAIN&quot; -days 5000 -out rootCA.pem</div><div class="line">openssl genrsa -out server.key 2048</div><div class="line">openssl req -new -key server.key -subj &quot;/CN=$NGROK_DOMAIN&quot; -out server.csr</div><div class="line">openssl x509 -req -in server.csr -CA rootCA.pem -CAkey rootCA.key -CAcreateserial -out server.crt -days 5000</div></pre></td></tr></table></figure></p>
+<p>在软件源代码目录下面会生成一些证书文件，我们需要把这些文件拷贝到指定位置//一行一行复制<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">cp rootCA.pem assets/client/tls/ngrokroot.crt</div><div class="line">cp server.crt assets/server/tls/snakeoil.crt</div><div class="line">cp server.key assets/server/tls/snakeoil.key</div></pre></td></tr></table></figure></p>
+<hr>
+<p>四：编译服务端和客户端<br>指定编译环境变量，如何确认GOOS和GOARCH，可以通过go env来查看<br>1、编译服务端<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">cd /usr/local/go/src</div><div class="line">GOOS=linux GOARCH=amd64 ./make.bash</div><div class="line">cd /usr/local/ngrok/</div><div class="line">GOOS=linux GOARCH=amd64 make release-server</div></pre></td></tr></table></figure></p>
+<p>2：Windows的客户端编译(64位，32位的把GOARCH的值改为386)<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">cd /usr/local/go/src</div><div class="line">GOOS=windows GOARCH=amd64 ./make.bash</div><div class="line">cd /usr/local/ngrok/</div><div class="line">GOOS=windows GOARCH=amd64 make release-client</div></pre></td></tr></table></figure></p>
+<p>2.5：Linux的客户端编译<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">cd /usr/local/go/src</div><div class="line">GOOS=linux GOARCH=amd ./make.bash</div><div class="line">cd /usr/local/ngrok/</div><div class="line">GOOS=linux GOARCH=arm make release-client</div></pre></td></tr></table></figure></p>
+<p>3、启动服务端<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">/usr/local/ngrok/bin/ngrokd -domain=&quot;$NGROK_DOMAIN&quot; -httpAddr=&quot;:80&quot;</div></pre></td></tr></table></figure></p>
+<p>4 让程序一直在后台运行<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">nohup /usr/local/ngrok/bin/ngrokd -domain=&quot;$NGROK_DOMAIN&quot; -httpAddr=&quot;:80&quot; &amp;</div></pre></td></tr></table></figure></p>
+<hr>
+<p>五、客户端的使用及其配制文件</p>
+<p>客户端配置文件(ngrok.cfg)<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">server_addr: &quot;你的域名:4443&quot;</div><div class="line">trust_host_root_certs: false</div><div class="line">windows客户端：ngrok -config=ngrok.cfg -subdomain xxx 80</div><div class="line">Linux客户端使用：./ngrok -config=./ngrok.cfg -subdomain xxx 80 # 需要先授予ngrok可执行权限 chmod +x ngrok</div></pre></td></tr></table></figure></p>
+<p>这还是去年夏天玩Raspberry Pi(树莓派)时做的笔记，现同步到网络上，希望能有用。</p>
+
+
+
+
+
+</body>
+</html>
