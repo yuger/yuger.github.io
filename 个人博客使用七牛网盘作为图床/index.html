@@ -1,0 +1,49 @@
+<html>
+<head>
+	
+	<title>个人博客使用七牛网盘作为图床</title>
+	<meta name="keywords" content="My Blog, Spider Bitch!" />
+
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    
+    <!--<link rel="stylesheet" href="/css/main.css">-->
+	<link href="/css/main.css?v=2" rel="stylesheet" type="text/css" />
+    <!--<link rel="stylesheet" href="/css/style.css">-->
+    
+
+    <link rel="alternate" type="application/atom+xml" href="/atom.xml" title="Atom feed">
+
+    
+	<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2"/>
+    
+
+</head>
+
+<body>
+
+<p>之前写的博客都是纯文本，没有出现图片等多媒体内容，但是有的时候不可避免地需要用图片来展示内容，不是有”一图胜千言”的说法吗？虽然我并不赞同这种说法，然而图片在博客中的重要地位是毋庸置疑的。本文将记录使用七牛网盘作为博客图床的操作步骤。七牛是我早在他们创立初期2013年就使用的产品，访问速度一直蛮快的。</p>
+<p>首先用到的一个插件是<a href="https://github.com/gyk001/hexo-qiniu-sync" target="_blank" rel="external">hexo-qiniu-sync</a>, README页面已经把使用说明写得很清楚了，但是对于不熟悉这方面的可能还是感觉不知所云，所以这里把流程再仔细走一遍。</p>
+<ol>
+<li>在七牛官网注册一个账号，创建一个存储空间，这有点像给硬盘分区，点击个人面板→密钥管理，这里创建一个密钥，会自动生成一个    AccessKey和SecretKey，这两个字符串后面会用到。</li>
+<li>在hexo根目录下摁住Shift键，并在空白处点击鼠标右键，在弹出的菜单中点击<code>在此处打开命令窗口</code>，然后在命令窗口中输入以下命令：</li>
+</ol>
+<pre><code>npm install hexo-qiniu-sync --save
+</code></pre><p>稍等一会儿插件便已安装好了。</p>
+<ol>
+<li>在hexo主配置文件<code>_config.xml</code>文件中加入以下配置信息：<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">qiniu:</div><div class="line">  offline: false</div><div class="line">  sync: true</div><div class="line">  bucket: bucket_name # 这里填写刚刚命名的存储空间名</div><div class="line">  secret_file: sec/qn.json or C:</div><div class="line">  access_key: AccessKey # 这里填写刚刚获取的AccessKey</div><div class="line">  secret_key: SecretKey # 这里填写刚刚获取的SecretKey</div><div class="line">  dirPrefix: static</div><div class="line">  urlPrefix: http://bucket_name.qiniudn.com/static # 注意修改存储空间名</div><div class="line">  up_host: http://upload.qiniu.com</div><div class="line">  local_dir: static</div><div class="line">  update_exist: true</div><div class="line">  image: </div><div class="line">    folder: images</div><div class="line">    extend: </div><div class="line">  js:</div><div class="line">    folder: js</div><div class="line">  css:</div><div class="line">    folder: css</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>到这一步配置已经完成了，最后测试一下。</p>
+<pre><code>{% qnimg media.png title:title_media alt:alt_media 'class:' extend:?imageView2/2/w/550 %}
+</code></pre><p>在博客需要放置图片的位置输入以上代码，当然需要修改一下。</p>
+<img title="title_media" alt="alt_media" src="http://wangxingyu.qiniudn.com/static/images/media.png?imageView2/2/w/550">
+<p>保存，开启服务端，浏览器访问本文，能否显示上图？</p>
+
+
+
+
+
+</body>
+</html>
