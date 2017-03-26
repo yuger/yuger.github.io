@@ -1,0 +1,43 @@
+<html>
+<head>
+	
+	<title>Android视频监控器_OpenCV的应用</title>
+	<meta name="keywords" content="My Blog, Spider Bitch!" />
+
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    
+    <!--<link rel="stylesheet" href="/css/main.css">-->
+	<link href="/css/main.css?v=2" rel="stylesheet" type="text/css" />
+    <!--<link rel="stylesheet" href="/css/style.css">-->
+    
+
+    <link rel="alternate" type="application/atom+xml" href="/atom.xml" title="Atom feed">
+
+    
+	<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2"/>
+    
+
+</head>
+
+<body>
+
+<p>OpenCV是一个跨平台的主要用于视频识别的开源库，目前我对其了解还不是很多，因为它在Android上的应用还非常麻烦，资料也不多，而且包体很大。但是这并不妨碍我使用它，虽然还自己造不出轮子，但是可以搬别人的轮子啊，拿别人的轮子造自己的车，只要车子能够跑起来也可以号称是”自主知识产权”了，本文就来介绍一下这辆”车”。</p>
+<p>我们用Android手机拍照的时候需要用到预览功能，预览时的数据会以字节数组的形式返回给应用，即系统会回掉<code>android.hardware.Camera</code>类的<code>onPreviewFrame(byte[] data, Camera camera)</code>方法。</p>
+<p>首先我们需要将视频预览界面继承<code>SurfaceView</code>并实现相关接口：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">CameraPreviewView</span> <span class="keyword">extends</span> <span class="title">SurfaceView</span> <span class="keyword">implements</span> <span class="title">Camera</span>.<span class="title">PreviewCallback</span>, <span class="title">SurfaceHolder</span>.<span class="title">Callback</span></span></div></pre></td></tr></table></figure></p>
+<p>在回掉方法<code>public void surfaceCreated(SurfaceHolder holder)</code>中完成Camera对象的初始化；在<code>public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)</code>回掉中创建两个<code>org.opencv.core.Mat</code>类对象：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">Mat img_yuv420sp = <span class="keyword">new</span> Mat(capture_h + capture_h / <span class="number">2</span>, capture_w, CvType.CV_8UC1);</div><div class="line">Mat img_rgb = <span class="keyword">new</span> Mat(capture_h, capture_w, CvType.CV_8UC3);</div></pre></td></tr></table></figure></p>
+<p><code>capture_h</code>是预览界面的高，<code>capture_w</code>是预览界面的宽，一般是手机屏幕的宽高，将这两个Mat对象设置为成员变量，后面会要用到。</p>
+<p>在<code>onPreviewFrame</code>中对每一个预览帧作如下处理：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="meta">@Override</span></div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onPreviewFrame</span><span class="params">(<span class="keyword">byte</span>[] data, Camera camera)</span> </span>&#123; </div><div class="line">        img_yuv420sp.put(<span class="number">0</span>, <span class="number">0</span>, data);</div><div class="line">        Imgproc.cvtColor(img_yuv420sp, img_rgb, Imgproc.COLOR_YUV420sp2BGR);</div><div class="line">    &#125;</div></pre></td></tr></table></figure></p>
+<p>以上其实是对视频格式进行转换，将YUV420sp转换成我们更熟悉的RGB,得到的是img_rgb对象。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">MatOfInt params = <span class="keyword">new</span> MatOfInt(Imgcodecs.IMWRITE_JPEG_QUALITY, <span class="keyword">int</span> quality;</div><div class="line">MatOfByte mat_of_buf = <span class="keyword">new</span> MatOfByte();</div><div class="line">Imgcodecs.imencode(<span class="string">".jpg"</span>, img_rgb, mat_of_buf, params);</div><div class="line"><span class="keyword">byte</span>[] byteArray = mat_of_buf.toArray();</div></pre></td></tr></table></figure>
+<p>以上是通过OpenCV将Mat img_rgb转换成byte数组，跟刚开始的byte数组格式已经不同了。在这里还可以设置Jpg图片的质量，在1~100之间。</p>
+<p>获得jpg字节数组之后就可以通过网络传输给其他设备啦！</p>
+<p>应用示例：<br><a href="https://play.google.com/store/apps/details?id=com.wxy.videomonitor" target="_blank" rel="external"><img src="http://7xqblc.com1.z0.glb.clouddn.com/static/images/googleplay.png" alt=""></a></p>
+
+
+
+
+
+</body>
+</html>
