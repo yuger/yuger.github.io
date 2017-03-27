@@ -1,0 +1,103 @@
+<html>
+<head>
+	
+	<title>Android O第一个预览版行为变更</title>
+	<meta name="keywords" content="My Blog, Spider Bitch!" />
+
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    
+    <!--<link rel="stylesheet" href="/css/main.css">-->
+	<link href="/css/main.css?v=2" rel="stylesheet" type="text/css" />
+    <!--<link rel="stylesheet" href="/css/style.css">-->
+    
+
+    <link rel="alternate" type="application/atom+xml" href="/atom.xml" title="Atom feed">
+
+    
+	<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2"/>
+    
+
+</head>
+
+<body>
+
+<p>自Android4.4开始便一直追随它的脚步，一点点看着它变得越来越完善，最近Android O已经发布了第一个预览版本，这将是未来的Android 8.0吧！</p>
+<p>作为开发者我们更关注它发生了哪些变化，API和功能都出现了哪些新鲜的玩意。我们来到Android开发者官网的preview页面，具体看看Android O的新特性。</p>
+<p>大部分改变将影响所有的应用，而无视他们的目标API(targetAPI),小部分改变只影响targetAPI为Android O的应用，以下便分这两部分讲解。</p>
+<h3 id="影响所有targetAPI的行为变更"><a href="#影响所有targetAPI的行为变更" class="headerlink" title="影响所有targetAPI的行为变更"></a>影响所有targetAPI的行为变更</h3><p>当在Android O平台运行时以下改变将会对所有应用产生影响，而无视它们的targetAPI，所有开发者都应该关注这些改变并修改他们的应用以支持新的系统。</p>
+<h5 id="后台限制"><a href="#后台限制" class="headerlink" title="后台限制"></a>后台限制</h5><p>Android O为了提升电池续航的举措之一，当你的应用进入缓存状态，且没有活动的组件，系统将不再让该应用处于唤醒状态。</p>
+<h5 id="Android后台位置信息限制"><a href="#Android后台位置信息限制" class="headerlink" title="Android后台位置信息限制"></a>Android后台位置信息限制</h5><p>在Android O设备上后台应用将接收到更少的地理位置更新，该限制影响所有接受地理位置更新的应用包括Google Play服务。该改变影响以下API:</p>
+<ul>
+<li>Fused Location Provider (FLP)</li>
+<li>Geofencing</li>
+<li>GNSS Measurements</li>
+<li>Location Manager</li>
+</ul>
+<p>Android O 对以下方法也有改变：</p>
+<ul>
+<li><code>NotificationManager.startServiceInForeground()</code>开启前台服务，老方法将不再有效。</li>
+<li>当应用target O，且服务被限制时<code>startService()</code>方法将会抛出一个<code>IllegalStateException</code>异常。</li>
+</ul>
+<p>为确保你的应用按预期执行，请完成以下步骤：</p>
+<ul>
+<li>检查你的逻辑并确保是有最新的地理位置API</li>
+<li>测试你的应用的行为符合你的预期</li>
+<li>考虑使用<code>Fused Location Provider (FLP)</code> 或者 <code>geofencing</code>获取用户的地理位置信息。</li>
+</ul>
+<p>更多信息查看<a href="https://developer.android.google.cn/preview/features/background-location-limits.html" target="_blank" rel="external"> Background Location Limits</a></p>
+<h5 id="蓝牙"><a href="#蓝牙" class="headerlink" title="蓝牙"></a>蓝牙</h5><p>Android O改变<code>ScanRecord.getBytes()</code>方法检索返回数据的长度。</p>
+<ul>
+<li><code>getBytes()</code>方法不再返回字节的长度</li>
+<li>五个可连接的蓝牙设备将返回超过之前的大约60字节的最大长度。</li>
+<li>当远端设备没有提供扫描反馈，可能会少于60字节的返回数据。</li>
+</ul>
+<h5 id="输入和导航"><a href="#输入和导航" class="headerlink" title="输入和导航"></a>输入和导航</h5><p>在Android O, 键盘的位置根据导航输入设备调整。详情：<a href="https://developer.android.google.cn/training/keyboard-input/navigation.html" target="_blank" rel="external">Supporting Keyboard Navigation</a></p>
+<h5 id="Accessibility"><a href="#Accessibility" class="headerlink" title="Accessibility"></a>Accessibility</h5><p>Accessibility服务可以感知你App的TextView对象的所有<a href="https://developer.android.google.cn/reference/android/text/style/ClickableSpan.html" target="_blank" rel="external"> ClickableSpan</a>实例。详情：<a href="https://developer.android.google.cn/guide/topics/ui/accessibility/index.html" target="_blank" rel="external">Accessibility</a></p>
+<h5 id="安全"><a href="#安全" class="headerlink" title="安全"></a>安全</h5><p>Android涉及以下安全相关的改变：</p>
+<ul>
+<li>平台不再支持SSLv3。</li>
+<li>当与服务器建立一个未正确实现TLS协议的HTTPS连接，<code>HttpsURLConnection</code>不再回退到更早的TLS协议版本并重试。</li>
+<li>Android O实现安全计算(SECCOMP)过滤所有App</li>
+<li>WebView对象将运行在多进程模式</li>
+<li>关于Native库的安全增强信息，查看<a href="https://developer.android.google.cn/preview/behavior-changes.html#nl" target="_blank" rel="external">Native Libraries</a><br>让你的App更加安全的其他指导，查看<a href="https://developer.android.google.cn/topic/security/index.html" target="_blank" rel="external">Security for Android Developers</a><h5 id="政策"><a href="#政策" class="headerlink" title="政策"></a>政策</h5>Android O在隐私相关实现以下改变：</li>
+<li>获取不同的身份<ul>
+<li><a href="https://developer.android.google.cn/reference/android/provider/Settings.Secure.html#ANDROID_ID" target="_blank" rel="external">ANDROID_ID</a>的值现在是在每个App的作用域而不是每个用户。<code>ANDROID_ID</code>联合每个应用的包名、签名、用户和设备，每个运行在同一台设备上的应用不再看到相同的Android Id。</li>
+<li>ANDROID_ID不会因为卸载和重新安装而改变，因为包名和签名相同。</li>
+<li>如果由于升级而签名改变并不会改变ANDROID_ID。</li>
+<li>Widevine ID是每个App的作用域</li>
+</ul>
+</li>
+<li>查询<code>net.hostname</code>系统将返回null</li>
+<li>你不要再认为Apk在目录中的位置名字是以-1或者-2结尾，App应该通过<a href="https://developer.android.google.cn/reference/android/content/pm/ApplicationInfo.html#sourceDir" target="_blank" rel="external">sourceDir</a>获取目录，不要直接依赖目录的格式化。</li>
+</ul>
+<h5 id="网络和HTTP-S-连接"><a href="#网络和HTTP-S-连接" class="headerlink" title="网络和HTTP(S)连接"></a>网络和HTTP(S)连接</h5><h5 id="未捕获异常的日志"><a href="#未捕获异常的日志" class="headerlink" title="未捕获异常的日志"></a>未捕获异常的日志</h5><p>如果应用实现<a href="https://developer.android.google.cn/reference/java/lang/Thread.UncaughtExceptionHandler.html" target="_blank" rel="external">Thread.UncaughtExceptionHandler</a>，但是没有调用默认的<code>Thread.UncaughtExceptionHandler</code>，当异常发生时系统将不会杀死App进程。从Android O开始，系统在这种情况下记录异常堆栈信息，在早期的版本系统将不会记录异常堆栈信息。</p>
+<p>我们建议自定义实现<code>Thread.UncaughtExceptionHandler</code></p>
+<h5 id="收集处理"><a href="#收集处理" class="headerlink" title="收集处理"></a>收集处理</h5><p><code>AbstractCollection.removeAll()</code>和<code>AbstractCollection.retainAll()</code>将总是抛出<code>NullPointerException</code>异常，当Collection为空时不会抛出NullPointerException。</p>
+<h5 id="本地化和国际化"><a href="#本地化和国际化" class="headerlink" title="本地化和国际化"></a>本地化和国际化</h5><p>在Android O,以下方法使用<code>Locale.getDefault(Category.DISPLAY)</code>而不是<code>Locale.getDefault()</code>:</p>
+<ul>
+<li>Currency.getDisplayName()</li>
+<li>Currency.getSymbol()</li>
+<li>Locale.getDisplayScript()</li>
+</ul>
+<h5 id="联系人提供者使用统计改变"><a href="#联系人提供者使用统计改变" class="headerlink" title="联系人提供者使用统计改变"></a>联系人提供者使用统计改变</h5><p>之前的Android版本Contacts Provider允许开发者为每个联系人获取使用数据</p>
+<h5 id="App-快捷方式"><a href="#App-快捷方式" class="headerlink" title="App 快捷方式"></a>App 快捷方式</h5><p>Android包含以下关于快捷方式的改变：</p>
+<ul>
+<li><code>com.android.launcher.action.INSTALL_SHORTCUT</code>广播不再有效因为已经私有。你创建快捷方式应该通过<code>ShortcutManager</code>类使用<code>requestPinShortcut()</code>方法。<h5 id="弹窗"><a href="#弹窗" class="headerlink" title="弹窗"></a>弹窗</h5>如果应用使用<code>SYSTEM_ALERT_WINDOW</code>权限而且使用以下窗口类型之一以显示在其他应用之上：</li>
+<li>TYPE_PHONE</li>
+<li>TYPE_PRIORITY_PHONE</li>
+<li>TYPE_SYSTEM_ALERT</li>
+<li>TYPE_SYSTEM_OVERLAY</li>
+<li>TYPE_SYSTEM_ERROR<br>…<br>这些窗口总是显示在<code>TYPE_APPLICATION_OVERLAY</code>窗口类型之下，如果App的target为Android O, App使用<code>TYPE_APPLICATION_OVERLAY</code>窗口类型显示弹窗。<h5 id="Android-在企业"><a href="#Android-在企业" class="headerlink" title="Android 在企业"></a>Android 在企业</h5>Android O包含的变化将影响企业应用，查看<a href="https://developer.android.google.cn/preview/features/work.html#behavior-changes" target="_blank" rel="external">Android in the Enterprise</a></li>
+</ul>
+<h3 id="只影响targetAPI为Android-O的变化"><a href="#只影响targetAPI为Android-O的变化" class="headerlink" title="只影响targetAPI为Android O的变化"></a>只影响targetAPI为Android O的变化</h3><p>以下改变专门针对targetAPI为Android O或者以上的应用，应用必须支持以下行为变更才能设置targetSDK为Android O或者以上。</p>
+<h5 id="后台限制-1"><a href="#后台限制-1" class="headerlink" title="后台限制"></a>后台限制</h5><h5 id="安全-1"><a href="#安全-1" class="headerlink" title="安全"></a>安全</h5><h5 id="政策-1"><a href="#政策-1" class="headerlink" title="政策"></a>政策</h5><h5 id="权限"><a href="#权限" class="headerlink" title="权限"></a>权限</h5><h5 id="媒体"><a href="#媒体" class="headerlink" title="媒体"></a>媒体</h5><h5 id="Native-库"><a href="#Native-库" class="headerlink" title="Native 库"></a>Native 库</h5><h5 id="收集处理-1"><a href="#收集处理-1" class="headerlink" title="收集处理"></a>收集处理</h5><h5 id="账户访问和可发现性"><a href="#账户访问和可发现性" class="headerlink" title="账户访问和可发现性"></a>账户访问和可发现性</h5><h5 id="弹窗-1"><a href="#弹窗-1" class="headerlink" title="弹窗"></a>弹窗</h5><h5 id="内容变化通知"><a href="#内容变化通知" class="headerlink" title="内容变化通知"></a>内容变化通知</h5><p>翻译好麻烦，还是看原文档吧！</p>
+<p><a href="https://developer.android.google.cn/preview/behavior-changes.html" target="_blank" rel="external">https://developer.android.google.cn/preview/behavior-changes.html</a></p>
+
+
+
+
+
+</body>
+</html>
