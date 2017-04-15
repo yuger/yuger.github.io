@@ -1,0 +1,57 @@
+<html>
+<head>
+	
+	<title>Firebase使用方法</title>
+	<meta name="keywords" content="My Blog, Spider Bitch!" />
+
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    
+    <!--<link rel="stylesheet" href="/css/main.css">-->
+	<link href="/css/main.css?v=2" rel="stylesheet" type="text/css" />
+    <!--<link rel="stylesheet" href="/css/style.css">-->
+    
+
+    <link rel="alternate" type="application/atom+xml" href="/atom.xml" title="Atom feed">
+
+    
+	<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2"/>
+    
+
+</head>
+
+<body>
+
+<p><a href="https://firebase.google.cn/" target="_blank" rel="external">Firebase</a>是Google为开发者提供的用户分析、崩溃报告、应用登录等功能的平台，可以运用在网页和移动应用上。最近在我的Android App上使用了Firebase, 以下是一些记录。</p>
+<p>Firebase需要在云端控制台注册应用，然后在应用源码添加相关配置，应用上线被用户启用后就可以统计用户的使用情况，Firebase功能强大，最核心的是Firebase Analytics，一般使用这个功能就足够了。</p>
+<p>登录控制台 <a href="https://console.firebase.google.com/" target="_blank" rel="external">https://console.firebase.google.com/</a> 点击<code>Add Project</code>添加一个工程，一般同一个应用的不同平台可以归在同一个工程下，比如开发一个App有Android客户端、IOS客户端和网页端，便可以归纳在同一个Project下，每个Project可以添加多个App，用于容纳各个平台。</p>
+<p>创建Project后进入Project接着创建Android系统下的App，需要填写App包名，然后会生成一个<code>google-services.json</code>文件，需要下载下来放在<projectname>\<modelname>\目录下，下Project的build.gradle文件的dependencies {}内添加<code>classpath &#39;com.google.gms:google-services:3.0.0&#39;</code>, 在Module的build.gradle文件的dependencies{}内添加<code>compile &#39;com.google.firebase:firebase-core:&lt;版本号&gt;&#39;</code>，然后在该文件底部添加<code>apply plugin: &#39;com.google.gms.google-services&#39;</code>。至此，配置方面已经完成。</modelname></projectname></p>
+<p>在Android入口Activity定义<code>com.google.firebase.analytics.FirebaseAnalytics</code>对象：</p>
+<pre><code>private FirebaseAnalytics mFirebaseAnalytics;
+</code></pre><p><code>onCreate()</code>中初始化：</p>
+<pre><code>mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
+</code></pre><h5 id="记录事件"><a href="#记录事件" class="headerlink" title="记录事件"></a>记录事件</h5><p>事件让您可以了解您的应用中发生了什么，例如用户操作、系统事件或错误。</p>
+<p>Analytics 会自动为您记录一些事件；您无需添加任何代码即可接收这些事件。<a href="https://support.google.com/firebase/answer/6317485" target="_blank" rel="external">详情</a></p>
+<p>如果应用需要收集其他数据，您可以在应用中记录最多 500 种不同的 Analytics 事件类型。</p>
+<p>应用可记录的事件总量没有任何限制。请注意，事件名称区分大小写，只有在生成两个不同事件时才使用两个不同的名称记录事件。<br>在创建 FirebaseAnalytics 实例后，您可以通过 <code>logEvent()</code> 方法使用它记录事件。示例：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">Bundle params = <span class="keyword">new</span> Bundle();</div><div class="line">params.putString(<span class="string">"image_name"</span>, name);</div><div class="line">params.putString(<span class="string">"full_text"</span>, text);</div><div class="line">mFirebaseAnalytics.logEvent(<span class="string">"share_image"</span>, params);</div></pre></td></tr></table></figure></p>
+<h5 id="设置用户属性"><a href="#设置用户属性" class="headerlink" title="设置用户属性"></a>设置用户属性</h5><p>用户属性是为描述用户群区段而定义的属性，如语言首选项或地理位置。</p>
+<p>Analytics 会自动记录一些用户属性；您无需添加任何代码即可启用它们。包括：应用版本 设备型号 性别 年龄 兴趣 操作系统版本 新/老用户</p>
+<p>如果应用需要收集其他数据，您可以在应用中记录最多 25 种不同的 Analytics 用户属性。</p>
+<p>请注意，用户属性名称区分大小写，只有在记录两个不同的用户属性时才设置两个不同名称的用户属性。</p>
+<p>您可以设置 Analytics用户属性以描述应用的用户。您可以通过将这些属性作为您的报告的筛选器来分析各种用户区段的行为。</p>
+<p>按如下方式设置用户属性：</p>
+<ol>
+<li>在 Firebase console 的 Analytics 页面中注册此属性。</li>
+<li>添加代码以通过 setUserProperty() 方法设置 Analytics 用户属性。</li>
+</ol>
+<p>以下示例展示添加了一个假设的喜欢的食物属性，其在 mFavoriteFood 中将此值分配给活跃用户：</p>
+<pre><code>mFirebaseAnalytics.setUserProperty(&quot;favorite_food&quot;,mFavoriteFood);
+</code></pre><p>目前发现Firebase数据更新比较慢，而且测试时有的手机并没有统计到的问题。</p>
+
+
+
+
+
+</body>
+</html>
