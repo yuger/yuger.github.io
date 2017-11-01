@@ -1,0 +1,153 @@
+<html>
+<head>
+	
+	<title></title>
+	<meta name="keywords" content="My Blog, Spider Bitch!" />
+
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    
+    <!--<link rel="stylesheet" href="/css/main.css">-->
+	<link href="/css/main.css?v=2" rel="stylesheet" type="text/css" />
+    <!--<link rel="stylesheet" href="/css/style.css">-->
+    
+
+    <link rel="alternate" type="application/atom+xml" href="/atom.xml" title="Atom feed">
+
+    
+	<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2"/>
+    
+
+</head>
+
+<body>
+
+<p>Wireshark作为网络分析最佳利器之一，是IT技术人士必备利器。</p>
+<ol>
+<li>【基础】软件使用调试</li>
+<li>【进阶】协议分析实战</li>
+<li>【高级】网络故障分析</li>
+</ol>
+<p>网络原理</p>
+<pre><code>本机环境：直接抓包本机网卡进出流量
+
+集线器环境：局域网抓包
+
+交换机环境：1.端口镜像 2.ARP欺骗 3. MAC泛洪
+</code></pre><p>底层原理：</p>
+<pre><code>1.Win-/libpcap: Wireshark抓包时依赖的库文件
+
+2.Capture: 捕包引擎，利用libpcap/WinPcap从底层抓取网络数据包，libpcap/WinPcap提供了通用的抓包接口，能从不同类型的网络接口(包括以太网，令牌环网，ATM网等)获取数据包
+
+3.Wiretap: 格式支持，从抓包文件中读取数据包，支持多种文件格式
+
+4.Core: 核心引擎，通过函数调用将其他模块连接在一起，起到联动调用的作用。
+
+5.GTK 1/2: 图像处理工具，处理用户的输入输出显示。
+</code></pre><p>视图介绍：</p>
+<pre><code> 1.标题栏    
+2.主菜单栏   
+3.工具栏(快捷方式栏) 
+4.过滤栏    
+5.数据包列表区，每行一个数据包 
+6.数据包详细区 
+7.数据包字节区  
+8.数据包统计区  
+</code></pre><p>数据包操作</p>
+<pre><code>标记数据包      
+注释数据包
+合并数据包
+打印数据包
+导出数据包
+</code></pre><p>首选项设置</p>
+<pre><code>功能： 设置默认软件参数
+路径： 编辑 -&gt; 首选项
+</code></pre><p>抓包选项设置</p>
+<pre><code>功能：网卡设置 抓包过滤器 多文件连续保存 停止抓包规则 名字解析
+路径： 捕获 -&gt; 选项
+</code></pre><p>过滤器设置</p>
+<pre><code>抓包过滤器
+    语法说明
+        BPF语法(Berkeley Packet Filter)： 基于libpcap/wincap库
+        类型Type: host、 net 、post
+        方向Dir: src、dst
+        协议Proto: ether、ip、tcp、udp、http、ftp
+        逻辑运算符: &amp;&amp;与 、 ||或 、 !非
+    举例说明
+        src host 192.168.1.1 &amp;&amp; dst post 80: 抓取源地址为192.168.1.1, 目的为80端口的流量
+        host 192.168.1.1 || host 192.168.1.2: 抓取192.168.1.1 和 192.168.1.2的流量
+        !broadcast: 不要抓取广播包
+    实验演示
+        过滤MAC地址案例
+            ether host 00:88:ca:86:f8:0d
+            ether src host 00:88:ca:86:f8:0d
+            ether dst host 00:88:ca:86:f8:0d
+        过滤IP地址案例
+            host 192.168.1.1
+            src host 192.168.1.1
+            dst host 192.168.1.1
+        过滤端口案例
+            port 80
+            ! port 80
+            dst port 80
+            src port 80
+        过滤协议案例： arp、 icmp
+        综合过滤案例： host 192.168.1.100 &amp;&amp; port 8080
+
+显示过滤器
+    语法说明
+        比较操作符：==等于  !=不等于    &gt;大于   &lt;小于   &gt;=大于等于  &lt;=小于等于
+        逻辑操作符： and 两个条件同时满足   or 其中一个条件被满足  xor 有且仅有一个条件被满足  not 没有条件被满足
+        IP地址： ip.addr、 ip.src、 ip.dst
+        端口过滤： tcp.port、tcp.srcport、 tcp.dstport、tcp.flag.syn、tcp.flag.ack
+        协议过滤： arp  ip  icmp    udp tcp bootp   dns 
+
+    实验演示
+        过滤IP地址案例
+            ip.addr == 192.168.1.1
+            ip.src == 192.168.1.1
+            ip.dst ==192.168.1.1
+            ip.src == 192.168.1.100 and ip.dst == 58.250.135.156
+        过滤端口案例
+            tcp.port == 80
+            tcp.srcport == 80
+            tcp.dstport == 80
+            tcp.flag.syn == 1
+        过滤协议案例
+            arp     tcp     udp     not http       not arp
+        综合过滤案例
+            ip.src == 192.168.1.100 and tcp.dstport == 80
+            ip.addr == 192.168.1.106 and udp.port == 4000
+</code></pre><h3 id="Wireshart-高级功能"><a href="#Wireshart-高级功能" class="headerlink" title="Wireshart 高级功能"></a>Wireshart 高级功能</h3><h4 id="数据流追踪"><a href="#数据流追踪" class="headerlink" title="数据流追踪"></a>数据流追踪</h4><pre><code>功能： 将TCP、UDP、SSL等数据流进行重组并完整的显示出来：TCP流 UDP流  SSL流
+路径： 分析 -&gt; 追踪流 分析-跟踪TCP流
+</code></pre><h4 id="专家信息说明"><a href="#专家信息说明" class="headerlink" title="专家信息说明"></a>专家信息说明</h4><pre><code>功能：可以对数据包中特定状态进行警告说明：错误(errors) 警告(warnings) 注意(notes) 对话(chats)
+路径：分析 -&gt; 专家信息
+</code></pre><h4 id="统计摘要说明"><a href="#统计摘要说明" class="headerlink" title="统计摘要说明"></a>统计摘要说明</h4><pre><code>功能：对抓取的数据包进行全局统计
+路径： 统计 -&gt; 捕获文件属性
+</code></pre><h4 id="协议分层统计"><a href="#协议分层统计" class="headerlink" title="协议分层统计"></a>协议分层统计</h4><pre><code>功能：统计通信流量中不同协议占用的百分比
+通过这个工具可以对全网流量有直接的了解，到底整个网络哪些流量占用最多哪些占用最少等。
+路径： 统计 -&gt; 协议分级 
+</code></pre><h4 id="网络节点和会话统计"><a href="#网络节点和会话统计" class="headerlink" title="网络节点和会话统计"></a>网络节点和会话统计</h4><pre><code>网络会话(conversations)
+    功能：统计通信会话之间接收和发送的数据包和字节数
+    通过这个工具可以找出网络中哪个会话(IP地址或端口号)最占用带宽 可以做进一步的网络策略
+    路径： 统计 -&gt; 对话
+网络节点(endpoint) 
+    功能：统计通信会话中每个节点接收和发送的数据包和字节数
+    通过这个工具可以找出网络中哪个节点(IP地址或端口号)最占用带宽
+    路径： 统计 -&gt; 端点
+</code></pre><h4 id="数据包长度"><a href="#数据包长度" class="headerlink" title="数据包长度"></a>数据包长度</h4><pre><code>功能：统计数据流量中包长度的分布
+路径： 统计 -&gt; 分组长度
+</code></pre><h4 id="图表分析"><a href="#图表分析" class="headerlink" title="图表分析"></a>图表分析</h4><pre><code>IO图表(IO Graph) 
+    功能：对网络中的吞吐量进行实时图形显示
+    路径： 统计 -&gt; IO图表
+数据流图(Flow Graph)
+    功能：将会话通信过程图形可视化出来
+    路径：统计 -&gt; 流量图
+</code></pre>
+
+
+
+
+</body>
+</html>
