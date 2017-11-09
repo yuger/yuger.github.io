@@ -1,0 +1,59 @@
+<html>
+<head>
+	
+	<title>CentOS7 配置Tomcat服务端</title>
+	<meta name="keywords" content="My Blog, Spider Bitch!" />
+
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    
+    <!--<link rel="stylesheet" href="/css/main.css">-->
+	<link href="/css/main.css?v=2" rel="stylesheet" type="text/css" />
+    <!--<link rel="stylesheet" href="/css/style.css">-->
+    
+
+    <link rel="alternate" type="application/atom+xml" href="/atom.xml" title="Atom feed">
+
+    
+	<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2"/>
+    
+
+</head>
+
+<body>
+
+<p>Tomcat运行前提必须系统已配置JDK，以下是安装JDK步骤：</p>
+<h4 id="安装JDK"><a href="#安装JDK" class="headerlink" title="安装JDK"></a>安装JDK</h4><ol>
+<li>登录命令行客户端</li>
+<li><code>cd /usr/local/</code></li>
+<li><code>wget --no-check-certificate --no-cookies --header &quot;Cookie: oraclelicense=accept-securebackup-cookie&quot; http://download.oracle.com/otn-pub/java/jdk/9.0.1+11/jdk-9.0.1_linux-x64_bin.rpm</code><br>注意链接部分最新版本在 <a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html" target="_blank" rel="external">http://www.oracle.com/technetwork/java/javase/downloads/index.html</a> 获取</li>
+<li>下载完成后运行 <code>ls</code> 命令查看已下载的文件名，此处为<code>jdk-9.0.1_linux-x64_bin.rpm</code> </li>
+<li>安装JDK。<br>运行命令<code>rpm -ivh jdk-9.0.1_linux-x64_bin.rpm</code> JDK默认安装在<code>/usr/java</code>中</li>
+<li>安装验证。<br>执行以下操作，查看信息是否正常：<code>java</code> <code>javac</code> <code>java -version</code></li>
+<li><p>环境变量配置<br>修改系统环境变量文件：<br><code>vi + /etc/profile</code><br>向文件里面追加以下内容：  </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">JAVA_HOME=/usr/java/jdk&lt;版本号&gt; //版本号在java -version中获取    </div><div class="line">JRE_HOME=/usr/java/jdk&lt;版本号&gt;/jre    </div><div class="line">PATH=$PATH:$JAVA_HOME/bin:$JRE_HOME/bin   </div><div class="line">CLASSPATH=.:$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar:$JRE_HOME/lib</div><div class="line">export JAVA_HOME JRE_HOME PATH CLASSPATH</div></pre></td></tr></table></figure>
+</li>
+<li><p>使修改生效<br><code>source /etc/profile</code> //使修改立即生效<br><code>echo $PATH</code> //查看PATH值</p>
+</li>
+<li>安装完成JDK之后可以将安装包删除<br><code>cd /usr/local</code>    <code>rm -rf jdk-9.0.1_linux-x64_bin.rpm</code></li>
+</ol>
+<h4 id="安装Tomcat"><a href="#安装Tomcat" class="headerlink" title="安装Tomcat"></a>安装Tomcat</h4><ol>
+<li><code>cd /usr/local</code></li>
+<li>下载Tomcat安装包<br><code>wget http://mirror.bit.edu.cn/apache/tomcat/tomcat-7/v7.0.82/bin/apache-tomcat-7.0.82.tar.gz</code> 其中链接地址从 <a href="https://tomcat.apache.org/download-70.cgi" target="_blank" rel="external">https://tomcat.apache.org/download-70.cgi</a> 获取  </li>
+<li>下载完成后解压压缩包<br><code>tar -zxv -f apache-tomcat-7.0.82.tar.gz</code></li>
+<li>删除压缩包<br><code>rm -rf apache-tomcat-7.0.82.tar.gz</code>  </li>
+<li>将解压生成的文件夹重命名<br><code>mv apache-tomcat-7.0.82 tomcat</code></li>
+<li>启动Tomcat<br><code>/usr/local/tomcat/bin/startup.sh</code></li>
+<li>防火墙开放8080端口，增加8080端口到防火墙配置中<br><code>vi + /etc/sysconfig/iptables</code><br>增加以下代码:<br><code>-A RH-Firewall-1-INPUT -m state --state NEW -m tcp -p tcp --dport 8080 -j ACCEPT</code> 然后按Esc键，输入<code>:wq</code>表示保存退出  </li>
+<li>重启防火墙<br><code>service iptables restart</code>  </li>
+<li>检验Tomcat安装运行，通过以下地址查看Tomcat是否运行正常：<code>http://172.104.81.152:8080/</code></li>
+<li>停止Tomcat<br><code>/usr/local/tomcat/bin/shutdown.sh</code></li>
+</ol>
+
+
+
+
+
+</body>
+</html>
