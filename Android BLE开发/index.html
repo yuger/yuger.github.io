@@ -1,0 +1,73 @@
+<html>
+<head>
+	
+	<title></title>
+	<meta name="keywords" content="My Blog, Spider Bitch!" />
+
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    
+    <!--<link rel="stylesheet" href="/css/main.css">-->
+	<link href="/css/main.css?v=2" rel="stylesheet" type="text/css" />
+    <!--<link rel="stylesheet" href="/css/style.css">-->
+    
+
+    <link rel="alternate" type="application/atom+xml" href="/atom.xml" title="Atom feed">
+
+    
+	<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2"/>
+    
+
+</head>
+
+<body>
+
+<h2 id="Android-BLE开发"><a href="#Android-BLE开发" class="headerlink" title="Android BLE开发"></a>Android BLE开发</h2><p>Android Bluetooth在Android 2.0开始提供支持，以下为Android Bluetooth开发简单套路。</p>
+<p>添加权限<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">&lt;uses-permissionandroid:name=&quot;android.permission.BLUETOOTH_ADMIN&quot; /&gt;</div><div class="line">&lt;uses-permissionandroid:name=&quot;android.permission.BLUETOOTH&quot; /&gt;</div></pre></td></tr></table></figure></p>
+<p>常用API类：</p>
+<pre><code>BluetoothAdapter
+BluetoothDevice
+BluetoothServerSocket
+BluetoothSocket
+</code></pre><h4 id="BluetoothAdapter"><a href="#BluetoothAdapter" class="headerlink" title="BluetoothAdapter"></a>BluetoothAdapter</h4><p>BluetoothAdapter有以下常用方法：<br>cancelDiscovery(): 取消发现，当正在搜索的时候调用将不再继续搜索<br>disable(): 关闭蓝牙<br>enable(): 打开蓝牙，此方法将不弹出提示，一般用以下方式弹出提示：<br>Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);<br>startActivityForResult(intent, reqCode);<br>getAddress(): 获取本地蓝牙地址<br>getDefaultAdapter(): 唯一获取BluetoothAdapter对象的方法<br>getName(): 获取本地蓝牙名称<br>getRemoteDevice(String address): 根据蓝牙地址获取远程蓝牙设备<br>getState(): 获取本地蓝牙适配器当前状态<br>isDiscovering(): 判断当前是否正在查找设备，是则返回true<br>isEnable(): 判断蓝牙是否打开<br>listenUsingRfcommWithServiceRecord(String name,UUID uuid)： 根据名称、UUID创建并返回BluetoothServerSocket，这是创建BluetoothSocket服务器端的第一步。<br>startDiscovery()：开始搜索，这是搜索的第一步。  </p>
+<h4 id="BluetoothDevice"><a href="#BluetoothDevice" class="headerlink" title="BluetoothDevice"></a>BluetoothDevice</h4><p> createRfcommSocketToServiceRecord(UUID uuid)： 根据UUID创建并返回一个BluetoothSocket。<br> getState()： 蓝牙状态。只有在 BluetoothAdapter.STATE_ON 状态下才可以监听。  </p>
+<h4 id="BluetoothServerSocket"><a href="#BluetoothServerSocket" class="headerlink" title="BluetoothServerSocket"></a>BluetoothServerSocket</h4><p> accept()： 等待客户端连接，阻塞线程，返回BluetoothSocket<br> accept(int timeout)<br> close()  </p>
+<h4 id="BluetoothSocket"><a href="#BluetoothSocket" class="headerlink" title="BluetoothSocket"></a>BluetoothSocket</h4><p>close()<br>connect()<br>getInptuStream()： 获取输入流<br>getOutputStream()： 获取输出流<br> getRemoteDevice()：获取远程设备，这里指的是获取bluetoothSocket指定连接的那个远程蓝牙设备。  </p>
+<h3 id="步骤："><a href="#步骤：" class="headerlink" title="步骤："></a>步骤：</h3><ol>
+<li><p>获取本地蓝牙适配器  </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">BluetoothAdapter mAdapter= BluetoothAdapter.getDefaultAdapter();</div></pre></td></tr></table></figure>
+</li>
+<li><p>打开蓝牙  </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">if</span>(!mAdapter.isEnabled())&#123;</div><div class="line"><span class="comment">//弹出对话框提示用户是后打开</span></div><div class="line">  Intent intent = <span class="keyword">new</span> Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);</div><div class="line">  startActivityForResult(intent, REQUEST_ENABLE);</div><div class="line">      <span class="comment">//不做提示，强行打开</span></div><div class="line">      <span class="comment">// mAdapter.enable();</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>使设备能够被搜索到：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">Intent intent = <span class="keyword">new</span> Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);</div><div class="line">startActivityForResult(intent, REQUEST_DISCOVERABLE);</div></pre></td></tr></table></figure></p>
+<ol>
+<li><p>搜索设备  </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">mAdapter.startDiscovery()</div></pre></td></tr></table></figure>
+</li>
+<li><p>返回发现的蓝牙设备，通过BroadcastReceiver接收  </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div></pre></td><td class="code"><pre><div class="line"> BroadcastReceiver mReceiver = <span class="keyword">new</span> BroadcastReceiver() &#123;</div><div class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">onReceive</span><span class="params">(Context context, Intent intent)</span> </span>&#123;</div><div class="line">        String action = intent.getAction();</div><div class="line">        <span class="comment">//找到设备</span></div><div class="line">        <span class="keyword">if</span> (BluetoothDevice.ACTION_FOUND.equals(action)) &#123;</div><div class="line">            BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);</div><div class="line">            <span class="keyword">if</span> (device.getBondState() != BluetoothDevice.BOND_BONDED) &#123;</div><div class="line">                Log.v(TAG, <span class="string">"find device:"</span> + device.getName()+ device.getAddress());</div><div class="line">            &#125;</div><div class="line">        &#125;<span class="keyword">else</span> <span class="keyword">if</span> (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) &#123;<span class="comment">//搜索完成</span></div><div class="line">            setTitle(<span class="string">"搜索完成"</span>);</div><div class="line">            <span class="keyword">if</span> (mNewDevicesAdapter.getCount() == <span class="number">0</span>) &#123;</div><div class="line">                Log.v(TAG, <span class="string">"find over"</span>);</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;;</div></pre></td></tr></table></figure>
+</li>
+<li><p>注册BroadcastReceiver。在onCreate()中完成</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">IntentFilter filter = <span class="keyword">new</span> IntentFilter(BluetoothDevice.ACTION_FOUND);</div><div class="line">registerReceiver(mReceiver, filter);</div><div class="line">filter = <span class="keyword">new</span> IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);</div><div class="line">registerReceiver(mReceiver, filter)</div></pre></td></tr></table></figure>
+</li>
+<li><p>建立连接<br>1）.服务端：  </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">BluetoothServerSocket serverSocket = mAdapter.listenUsingRfcommWithServiceRecord(serverSocketName,UUID);</div><div class="line">serverSocket.accept();</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>2）.客户端：<br><figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">BluetoothSocket clientSocket = device.createRfcommSocketToServiceRecord(UUID);</div><div class="line">clientSocket.connect();</div></pre></td></tr></table></figure></p>
+<p>以上<code>device</code>对象为BroadcastReceiver中获取的服务端BluetoothDevice对象。  </p>
+<ol>
+<li>数据传递。通过以上操作，就已经建立的BluetoothSocket连接了，数据传递无非是通过流的形式<br>1）. 获取流  <figure class="highlight java"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">inputStream = socket.getInputStream();</div><div class="line">outputStream = socket.getOutputStream();</div></pre></td></tr></table></figure>
+</li>
+</ol>
+<p>2）写出、读入</p>
+
+
+
+
+
+</body>
+</html>
