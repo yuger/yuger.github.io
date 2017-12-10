@@ -1,0 +1,129 @@
+<html>
+<head>
+	
+	<title>VirtualApp沙盒基本原理</title>
+	<meta name="keywords" content="My Blog, Spider Bitch!" />
+
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    
+    <!--<link rel="stylesheet" href="/css/main.css">-->
+	<link href="/css/main.css?v=2" rel="stylesheet" type="text/css" />
+    <!--<link rel="stylesheet" href="/css/style.css">-->
+    
+
+    <link rel="alternate" type="application/atom+xml" href="/atom.xml" title="Atom feed">
+
+    
+	<link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2"/>
+    
+
+</head>
+
+<body>
+
+<p><a href="https://github.com/asLody/VirtualApp" target="_blank" rel="external">VirtualApp</a>是一个开源的Android App虚拟化引擎，允许在其中创建虚拟空间，并在这个虚拟空间中运行其他应用。通过阅读源码及动态调试，基本了解了其运行原理，在此记录。</p>
+<h4 id="本质"><a href="#本质" class="headerlink" title="本质"></a>本质</h4><p>Android应用隔离是基于Linux系统的多用户机制实现的，即每个应用在安装时被分配了不同的Linux用户uid/gid。而在VirtualApp中，client应用（通过VirtualApp安装的应用）与host应用（即VirtualApp本身）是具有相同用户uid的。</p>
+<p>因此，VirtualApp在运行时，包含以下三部分：</p>
+<ul>
+<li>Main Process，进程名io.virtualapp，主要负责VirtualApp用户界面及应用管理</li>
+<li>Server Process，进程名io.virtualapp:x，主要负责系统服务的代理，是通过Content Provider启动的</li>
+<li>VApp Process，进程名io.virtualapp:p[0-…]，作为将来运行client应用的进程，当client应用启动后，其进程名会更新为client应用的包名</li>
+</ul>
+<p>下面是在VirtualApp中运行应用后通过ps命令得到的结果：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">generic_x86:/ $ ps |grep u0_a60</div><div class="line">u0_a60    2385  1258  996260 54456 SyS_epoll_ 00000000 S io.virtualapp</div><div class="line">u0_a60    2412  1258  980940 48272 SyS_epoll_ 00000000 S io.virtualapp:x</div><div class="line">u0_a60    3705  1258  993632 54472 SyS_epoll_ 00000000 S org.galaxy.simpleapp</div></pre></td></tr></table></figure></p>
+<p>可以看到，以上进程，均是以VirtualApp的用户uid运行的。因此，Android应用隔离此时不再适用，我们可以对client应用进行hook而无需root权限。</p>
+<h4 id="运行流程"><a href="#运行流程" class="headerlink" title="运行流程"></a>运行流程</h4><p>从启动VirtualApp到运行其中的应用，大致流程如下：</p>
+<h4 id="启动host应用"><a href="#启动host应用" class="headerlink" title="启动host应用"></a>启动host应用</h4><p>我们启动VirtualApp，其Application为io.virtualapp.VApp。在attachBaseContext()方法中会调用到com.lody.virtual.client.core.PatchManager#injectInternal，但此时为Main Process，不进行系统服务的替换。</p>
+<h4 id="启动Server-Process"><a href="#启动Server-Process" class="headerlink" title="启动Server Process"></a>启动Server Process</h4><p>host应用会进行一些初始化，其中就包括获取全部已安装应用，这会调用到com.lody.virtual.client.core.VirtualCore#getAllApps。而这一方法最终会访问com.lody.virtual.server.BinderProvider。由AndroidManifest.xml可知，该provider会运行在新进程io.virtualapp:x中，即Server Process。</p>
+<p>由于在新进程中启动组件，同样会首先创建该应用的Application，因此也会调用到com.lody.virtual.client.core.PatchManager#injectInternal。此时，会进行相应系统服务(ActivityManager和PackageManager)的代理构造和替换。</p>
+<h4 id="启动VApp-Process"><a href="#启动VApp-Process" class="headerlink" title="启动VApp Process"></a>启动VApp Process</h4><p>点击一个已安装应用，此时会通过替换掉的系统服务访问真实的系统服务（主要是ActivityManager），并在新进程中启动组件com.lody.virtual.client.stub.StubActivity.C0。由AndroidManifest.xml可知，该进程具有后缀:p0。</p>
+<p>同样的，在该Activity组件启动之前会初始化io.virtualapp.VApp，并在com.lody.virtual.client.core.PatchManager#injectInternal中完成系统服务的代理构造和替换。</p>
+<h4 id="启动client应用"><a href="#启动client应用" class="headerlink" title="启动client应用"></a>启动client应用</h4><p>此时，真正的client应用尚未启动，进程io.virtualapp:p0仅仅是作为一个placeholder。StubActivity会从Intent中获取到client应用的相关信息，并修改自身ActivityThread的handler。随后调用startActivity启动client应用。</p>
+<p>由于之前Server Process和VApp Process都已完成了相关系统服务的替换，这里会完成client应用的bindApplication调用、构造client应用的LoadedApk，并通过反射完成真正的Application和Activity的创建。</p>
+<p>最终，client应用便运行在了我们的VApp Process中。</p>
+<h4 id="系统服务的代理和替换"><a href="#系统服务的代理和替换" class="headerlink" title="系统服务的代理和替换"></a>系统服务的代理和替换</h4><p>VirtualApp之所以能够实现虚拟空间，是因为其对许多系统服务进行了代理和替换。因此，这部分便是整个框架的核心。系统服务运行在system_server中，Android应用调用系统服务，是通过Binder机制进行IPC。因此，应用所持有的是系统服务的BinderProxy，通过对这些BinderProxer构造代理并替换，便实现了对系统服务的代理和替换。</p>
+<p>具体地，我们以com.lody.virtual.client.hook.patchs.am.ActivityManagerPatch为例，这个类实现了对ActivityManager服务的代理和替换。</p>
+<h4 id="代理的构造"><a href="#代理的构造" class="headerlink" title="代理的构造"></a>代理的构造</h4><p>可以看到，这个类的注记中包含了大量类名：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">@Patch(&#123;StartActivity.class, StartActivityAsCaller.class,</div><div class="line">        StartActivityAndWait.class, StartActivityWithConfig.class, StartActivityIntentSender.class,</div><div class="line">        StartNextMatchingActivity.class, StartVoiceActivity.class,</div><div class="line">        GetIntentSender.class, RegisterReceiver.class, GetContentProvider.class,</div><div class="line">        GetContentProviderExternal.class,</div><div class="line">        ...</div></pre></td></tr></table></figure></p>
+<p>而这些列出的每一个类，对应于一个方法的hook，例如，com.lody.virtual.client.hook.patchs.am.StartActivity是ActivityManager服务的startActivity方法的hook。这些类均继承自com.lody.virtual.client.hook.base.Hook，包含了方法beforeCall(), call(), afterCall()，这些方法便是hook的具体内容。</p>
+<p>ActivityManagerPatch在创建时，会调用到其父类的方法com.lody.virtual.client.hook.base.PatchDelegate#onBindHooks。这里会检查上述注记中列出的hook，并对符合条件的hook调用addHook()方法：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line">...</div><div class="line">Class&lt;? extends PatchDelegate&gt; clazz = getClass();</div><div class="line">Patch patch = clazz.getAnnotation(Patch.class);</div><div class="line">int version = Build.VERSION.SDK_INT;</div><div class="line">if (patch != null) &#123;</div><div class="line">    Class&lt;?&gt;[] hookTypes = patch.value();</div><div class="line">    for (Class&lt;?&gt; hookType : hookTypes) &#123;</div><div class="line">        ApiLimit apiLimit = hookType.getAnnotation(ApiLimit.class);</div><div class="line">        boolean needToAddHook = true;</div><div class="line">        if (apiLimit != null) &#123;</div><div class="line">            int apiStart = apiLimit.start();</div><div class="line">            int apiEnd = apiLimit.end();</div><div class="line">            boolean highThanStart = apiStart == -1 || version &gt; apiStart;</div><div class="line">            boolean lowThanEnd = apiEnd == -1 || version &lt; apiEnd;</div><div class="line">            if (!highThanStart || !lowThanEnd) &#123;</div><div class="line">                needToAddHook = false;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        if (needToAddHook) &#123;</div><div class="line">            addHook(hookType);</div><div class="line">        &#125;</div><div class="line">...</div></pre></td></tr></table></figure></p>
+<p>而addHook()最终会调用到com.lody.virtual.client.hook.base.HookDelegate#addHook，其实质便是将这个hook添加至映射表internalHookTable中：</p>
+<pre><code>public Hook addHook(Hook hook) {
+    if (hook != null &amp;&amp; !TextUtils.isEmpty(hook.getName())) {
+        if (internalHookTable.containsKey(hook.getName())) {
+            VLog.w(TAG, &quot;The Hook(%s, %s) you added has been in existence.&quot;, hook.getName(),
+                    hook.getClass().getName());
+            return hook;
+        }
+        internalHookTable.put(hook.getName(), hook);
+    }
+    return hook;
+}
+</code></pre><p>internalHookTable维护了所有的hook，以hook的名称（一般就是所hook的方法的名称）作为key。随后，在com.lody.virtual.client.hook.base.HookDelegate.HookHandler的invoke()方法中，查找表 internalHookTable中是否包含将要执行的方法名；如果有，则依次执行对应hook的beforeCall(), call(), afterCall()：</p>
+<pre><code>private class HookHandler implements InvocationHandler {
+    @Override
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        Hook hook = getHook(method.getName());
+        try {
+            if (hook != null &amp;&amp; hook.isEnable()) {
+                if (hook.beforeCall(mBaseInterface, method, args)) {
+                    Object res = hook.call(mBaseInterface, method, args);
+                    res = hook.afterCall(mBaseInterface, method, args, res);
+                    return res;
+                }
+            }
+            return method.invoke(mBaseInterface, args);
+</code></pre><p>而这里的类HookHandler，就是构造的Java代理的Handler：</p>
+<pre><code>public HookDelegate(T baseInterface, Class&lt;?&gt;... proxyInterfaces) {
+    this.mBaseInterface = baseInterface;
+    if (baseInterface != null) {
+        if (proxyInterfaces == null) {
+            proxyInterfaces = HookUtils.getAllInterface(baseInterface.getClass());
+        }
+        mProxyInterface = (T) Proxy.newProxyInstance(baseInterface.getClass().getClassLoader(), proxyInterfaces, new HookHandler());
+</code></pre><p>对于ActivityManagerPatch来说，这里的baseInterface便是原始的BinderProxy: ActivityManagerProxy</p>
+<pre><code>public ActivityManagerPatch() {
+    super(new HookDelegate&lt;IInterface&gt;(ActivityManagerNative.getDefault.call()));
+}
+</code></pre><p>综上，我们根据baseInterface，为其构造了代理mProxyInterface。从而访问mProxyInterface时，便会执行HookHandler的invoke()方法，进而查找internalHookTable，对设置了hook的方法执行hook。</p>
+<h4 id="系统服务的替换"><a href="#系统服务的替换" class="headerlink" title="系统服务的替换"></a>系统服务的替换</h4><p>如之前所说，对系统服务的替换，是通过对应用所持有的系统服务的BinderProxy进行替换的。以上是构造代理的基本过程，那么如何将应用所持有的BinderProxy替换成我们构造的代理呢？回到ActivityManagerPatch，这个类的inject()方法完成了实际的替换工作：</p>
+<pre><code>@Override
+public void inject() throws Throwable {
+    if (ActivityManagerNative.gDefault.type() == IActivityManager.TYPE) {
+        ActivityManagerNative.gDefault.set(getHookDelegate().getProxyInterface());
+
+    } else if (ActivityManagerNative.gDefault.type() == Singleton.TYPE) {
+        Object gDefault = ActivityManagerNative.gDefault.get();
+        Singleton.mInstance.set(gDefault, getHookDelegate().getProxyInterface());
+    }
+    ...
+</code></pre><p>ActivityManagerNative.gDefault便是应用所持有的原始ActivityManagerProxy对象，通过Java反射，将替换成为getHookDelegate().getProxyInterface()。而替换的内容，便是我们所构造的代理mProxyInterface。</p>
+<p>由此，我们完成了对系统服务进行代理和替换的整个过程。随后，在调用系统服务时，便会执行以下操作：</p>
+<p>访问BinderProxy的代理，即我们设置了hook的代理<br>根据hook的具体内容操作，对数据进行处理；需要调用原始系统服务时，访问原始的BinderProxy<br>真正的系统服务接收到Binder，进行处理并返回</p>
+<h4 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h4><p>通过以上介绍可以看到，VirtualApp在原有系统服务之上构造了代理，进而为其中的应用搭建了一套虚拟环境，应用可以无感知地运行在这其中。更进一步，我们可以设置这套虚拟环境，使其实现应用多开、非侵入式应用hook等高级功能。</p>
+<h4 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h4><p><a href="http://rk700.github.io/2017/03/15/virtualapp-basic/" target="_blank" rel="external">http://rk700.github.io/2017/03/15/virtualapp-basic/</a></p>
+<p>==============</p>
+<p>Android应用启动Activity时，无论通过何种API调用，最终会调用到ActivityManager.startActivity()方法。该调用为远程Binder服务(加速该调用，Android应用会先在本地进程查找Binder服务缓存，如果找到，则直接调用。VA介入了该调用过程，通过以下方式：</p>
+<ol>
+<li><p>替换本地的ActivityManagerServise Binder服务为VA构造的代理对象，以接管该调用。这一步通过反射实现。</p>
+</li>
+<li><p>接管后，当调用startActivity启动多开应用时，VA修改Intent中的Activity为VA中己声明的占位Activity。这一步的目的是绕过Android无法启动未在AndroidManifest.xml中声明Activity的限制。</p>
+</li>
+<li><p>在被多开应用进程启动后，增加ActivityThread.mH.mCallback的消息处理回调。这一步接管了多开应用主线程的消息回调。</p>
+</li>
+</ol>
+<p>在以上修改的基础上，多开应用的Activity启动过程可分为以下两步骤：<br><img src="http://image.3001.net/images/20171027/15090844795939.png" alt=""><br>步骤一 修改Activity为己声明的StubActivity  </p>
+<p><img src="http://image.3001.net/images/20171027/15090845274584.png!small" alt=""><br>步骤二 mCallback从Intent中恢复Acitivty信息</p>
+<p>AMS：Android系统的ActivityManagerService，是管理Activity的系统服务</p>
+<p>VAMS：VA用于管理多开应用Activity的服务，大量API名称与AMS雷同。</p>
+<p>VApp：被多开应用所在的进程，该进程实际为VA派生的进程。</p>
+<p>由图可知，VA在AMS和VApp中通过增加VAMS对启动Intent进行了修改，实现了对Android系统的欺骗，而当应用进程启动后，还原Activity信息。通过自定义Classloader令使得Android加载并构造了未在VA的AndroidManifest.xml中声明的Activity。</p>
+<p>以上是启动过程的简化描述，实际上，VA对大量Android 系统API进行了Hook，这使得运行在其中的应用在VA的控制下，为VA的应用带来可能性。</p>
+<h4 id="参考地址："><a href="#参考地址：" class="headerlink" title="参考地址："></a>参考地址：</h4><p><a href="http://www.freebuf.com/articles/paper/152091.html" target="_blank" rel="external">http://www.freebuf.com/articles/paper/152091.html</a></p>
+
+
+
+
+
+</body>
+</html>
